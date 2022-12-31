@@ -1,0 +1,3 @@
+// the configured options and settings for pathTracer
+#define pathTracer_VERSION_MAJOR @pathTracer_VERSION_MAJOR@
+#define pathTracer_VERSION_MINOR @pathTracer_VERSION_MINOR@

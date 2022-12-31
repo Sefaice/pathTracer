@@ -1,0 +1,10 @@
+^C:\APPS\CG\PATHTRACER\SRC\BUILD\CMAKEFILES\883E2D901D8806A8AE86CCA0C9D81810\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/apps/CG/pathTracer/src -BC:/apps/CG/pathTracer/src/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/apps/CG/pathTracer/src/build/pathTracer.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
