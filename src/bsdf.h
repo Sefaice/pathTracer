@@ -57,7 +57,7 @@ public:
     virtual vec3 rho(const vec3 &wo, int nSamples, const vec2 *samples) const = 0;
     virtual vec3 rho(int nSamples, const vec2 *samples1, const vec2 *samples2) const = 0;
 
-    virtual float Pdf(const vec3 &wi, const vec3 &wo) const = 0;
+    virtual float Pdf(const vec3 &wo, const vec3 &wi) const = 0;
 
     //const BxDFType type;
 };
@@ -100,28 +100,87 @@ public:
         return std::abs(w.z); 
     }
 
-    float Pdf(const vec3 &wi, const vec3 &wo) const { // strange order?
-        return !SameHemisphere(wo, wi) ? AbsCosTheta(wi) * INV_PI : 0;
+    float Pdf(const vec3 &wo, const vec3 &wi) const {
+        return SameHemisphere(wo, wi) ? AbsCosTheta(wi) * INV_PI : 0;
     }
 
 private:
     const vec3 R; // the fraction of incident light that is scattered
 };
 
-vec3 Sample_BSDF(const vec3 &normal, const vec3 &woWorld, vec3 *wiWorld, const vec2 &u, float *pdf) {
+class BSDF {
+public:
+    BSDF(BxDF *b) { 
+        bxdf = b; 
+    }
+
+    vec3 f(const vec3 &woW, const vec3 &wiW) const {
+        mat3 l2w = localToWorld(normal);
+        mat3 w2l = inverse(l2w);
+
+        vec3 wi = w2l * wiW;
+        vec3 wo = w2l * woW;
+        
+        vec3 f = bxdf->f(wo, wi);
+
+        return f;
+    }
+
+    vec3 rho(int nSamples, const vec2 *samples1, const vec2 *samples2) const;
+    vec3 rho(const vec3 &wo, int nSamples, const vec2 *samples) const;
+
+    vec3 Sample_f(const vec3 &normal, const vec3 &woW, vec3 *wiW, const vec2 &u, float *pdf) const {
+        mat3 l2w = localToWorld(normal);
+        mat3 w2l = inverse(l2w);
+
+        vec3 wi, wo = w2l * woW;
+        *pdf = 0;
+        
+        vec3 f = bxdf->Sample_f(wo, &wi, u, pdf);
+        if (*pdf == 0) 
+            return vec3(0);
+        *wiW = l2w * wi;
+
+        *pdf += bxdf->Pdf(wo, wi);
+
+        // if not specular
+        //f = bxdf->f(wo, wi);
+        
+        return f;
+    }
+
+    float Pdf(const vec3 &woW, const vec3 &wiW) const {
+        mat3 l2w = localToWorld(normal);
+        mat3 w2l = inverse(l2w);
+
+        vec3 wi = w2l * wiW;
+        vec3 wo = w2l * woW;
+
+        float pdf = 0;
+
+        pdf += bxdf->pdf(wo, wi);
+
+        return pdf;
+    }
+
+private:
+    BxDF *bxdf;
+};
+
+vec3 Sample_BSDF(const vec3 &normal, const vec3 &woW, vec3 *wiW, const vec2 &u, float *pdf) {
 
     mat3 l2w = localToWorld(normal);
     mat3 w2l = inverse(l2w);
 
     BxDF *bxdf = new LambertianReflection(vec3(1.0));
 
-    vec3 wi, wo = w2l * woWorld;
+    vec3 wi, wo = w2l * woW;
     *pdf = 0;
     
     vec3 f = bxdf->Sample_f(wo, &wi, u, pdf);
     if (*pdf == 0) 
         return vec3(0);
-    *wiWorld = l2w * wi;
+    *wiW = l2w * wi;
 
     *pdf += bxdf->Pdf(wo, wi);
 

@@ -19,7 +19,7 @@ mac和pc的embree都在系统目录下，即环境变量，不用在项目中显
  * 参考https://github.com/oneapi-src/oneTBB/blob/master/INSTALL.md
  * 先config：`cmake .`
  * `cmake --debug-find .`用于debug find_package的过程，可以查看找到的.cmake文件获取信息
- * 在/build下编译：`cmake --build ..`
+ * 在/build下编译：`cmake --build .`
 
 需要用oiio保存图片，因此要在cmakelights.txt中添加依赖
 
@@ -54,7 +54,7 @@ world space, camera space都是右手系
 
 wo是相机方向，wi是光源方向
 
-bsdf: Sample_f - 输入wo，采样wi并计算pdf和f；Pdf不采样，给定方向计算pdf值
+bsdf: f就是brdf的值；Sample_f - 输入wo，采样wi并计算pdf和f；Pdf不采样，给定方向计算pdf值
 
 shape: 先实现了个disk，包括采样一个点和计算pdf
 
@@ -63,3 +63,5 @@ light：Sample_Li - 输入场景中一个点的位置，采样wi计算pdf，是�
 todo: 
   * 实现ch14的direct lighting，即integrator类，但是
   * bsdf和light组件都有基本的了，把他们串到一起，intersect with light需要场景中加入light以求交
+  * 事实上light contribution的计算就是f（brdf值*cos theta）乘 li（radiance）除pdf（importance sampling）
+  * sample bsdf eval light写到一半; 8.3的pdf怎么算

@@ -240,7 +240,7 @@ public:
         int depth = 0;
         Ray ray = camera.generateRay(sampler, y, x, height, width);
 
-        while (depth < 10) {
+        while (depth < 1) { // direct lighting
 
             struct RTCIntersectContext context;
             rtcInitIntersectContext(&context);
@@ -261,7 +261,7 @@ public:
                 vec3 normal = vec3(rayhit.hit.Ng_x, rayhit.hit.Ng_y, rayhit.hit.Ng_z);
                 normal = normalize(normal);
 
-                // sample BSDF
+                /*  sample BSDF */
                 vec3 wi;
                 float pdf;
                 vec3 tmp1 = Sample_BSDF(normal, ray.dir, &wi, sampler->sample2D(1)[0], &pdf);
@@ -270,17 +270,23 @@ public:
                 // } else if (rayhit.hit.geomID == groundID) {
                 //     L = vec3(0.5, 0.1, 0.1);
                 // }
+                /****************/
 
-                // sample light
+                /* sample light */
                 vec3 wiL;
-                float pdfL;
-                vec3 tmp2 = light->Sample_Li(ray.pos, sampler->sample2D(1)[0], &wiL, &pdfL);
+                float lightPdf = 0, scatteringPdf = 0;
+                vec3 Li = light->Sample_Li(ray.pos, sampler->sample2D(1)[0], &wiL, &lightPdf);
+
+                // Compute BSDF value for light sample
+                vec3 f = 
+
+
                 //// shadow ray
                 //Ray shadowRay(ray.pos, wi, 0.001f, INF);
                 //rtcOccluded1(scene, &context, (RTCRay*)&shadowRay);
                 //if (shadowRay.max_t > 0.0f) { // no intersection with scene
                 //    //L = L + vec3(1) * tmp1 / pdf;
-                //    //L = L + tmp2 / pdfL;
+                //    //L = L + tmp2 / lightPdf;
 
                 //    // // intersect with light
                 //    // struct RTCRayHit rayhitlight;
@@ -291,9 +297,10 @@ public:
                 //    // rayhitlight.hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 //    // rayhitlight.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
                 //    // rtcIntersect1(scene, &context, &rayhitlight);
-                //    pdfL = light->Pdf_Li(ray.pos, , , wi);
-                //    L = L + vec3(1) / pdfL;
+                //    lightPdf = light->Pdf_Li(ray.pos, , , wi);
+                //    L = L + vec3(1) / lightPdf;
                 //}
+                /******************************************************************************/
 
                 // update ray
                 ray.dir = normalize(wi);
@@ -349,7 +356,7 @@ int main() {
     Sampler *sampler = new Sampler();
 
     Application app;
-    app.renderToFile(camera, sampler, light, spp, "hello11.png");
+    app.renderToFile(camera, sampler, light, spp, "out.png");
 
     // /* wait for user input under Windows when opened in separate window */
     // waitForKeyPressedUnderWindows();
