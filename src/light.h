@@ -5,7 +5,9 @@ class Light {
 public:
     virtual vec3 Sample_Li(const vec3 &pos, const vec2 &u, vec3 *wi, float *pdf) const = 0;
     
-    virtual float Pdf_Li(const vec3 pos, const vec3 intersectPos, const vec3 intersectN, const vec3 &wi) const = 0;
+    virtual float Pdf_Li(const vec3 &pos, const vec3 &wi, const RTCScene &scene, const unsigned int &diskID) const = 0;
+
+    virtual vec3 L() const = 0;
 
 // protected:
 //     const mat3 LightToWorld, WorldToLight;
@@ -22,7 +24,7 @@ public:
         return I / (pLight - pos).lengthSquared();
     }
 
-    float Pdf_Li(const vec3 pos, const vec3 intersectPos, const vec3 intersectN, const vec3 &wi) const {
+    float Pdf_Li(const vec3 &pos, const vec3 &wi, const RTCScene &scene, const unsigned int &diskID) const {
         return 0; // infinitesimal light source
     }
 
@@ -44,9 +46,12 @@ public:
         return Lemit;
     }
 
-    //float Pdf_Li(const Interaction &ref, const Vector3f &wi) const {
-    float Pdf_Li(const vec3 pos, const vec3 intersectPos, const vec3 intersectN, const vec3 &wi) const {
-        return disk->Pdf(pos, intersectPos, intersectN, wi);
+    float Pdf_Li(const vec3 &pos, const vec3 &wi, const RTCScene &scene, const unsigned int &diskID) const {
+        return disk->Pdf(pos, wi, scene, diskID);
+    }
+
+    vec3 L() const { // todo: check wi and normal in same hemisphere
+        return Lemit;
     }
 
 private:

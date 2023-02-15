@@ -89,7 +89,7 @@ public:
 
     vec3 Sample_f(const vec3 &wo, vec3 *wi, const vec2 &sample, float *pdf) const {
         *wi = cosineSampleHemisphere(sample);
-        *pdf = 1.0;
+        *pdf = Pdf(wo, *wi);
         return f(wo, *wi);
     }
 
@@ -114,7 +114,7 @@ public:
         bxdf = b; 
     }
 
-    vec3 f(const vec3 &woW, const vec3 &wiW) const {
+    vec3 f(const vec3 &normal, const vec3 &woW, const vec3 &wiW) const {
         mat3 l2w = localToWorld(normal);
         mat3 w2l = inverse(l2w);
 
@@ -149,7 +149,7 @@ public:
         return f;
     }
 
-    float Pdf(const vec3 &woW, const vec3 &wiW) const {
+    float Pdf(const vec3 &normal, const vec3 &woW, const vec3 &wiW) const {
         mat3 l2w = localToWorld(normal);
         mat3 w2l = inverse(l2w);
 
@@ -158,7 +158,7 @@ public:
 
         float pdf = 0;
 
-        pdf += bxdf->pdf(wo, wi);
+        pdf += bxdf->Pdf(wo, wi);
 
         return pdf;
     }
@@ -166,26 +166,3 @@ public:
 private:
     BxDF *bxdf;
 };
-
-vec3 Sample_BSDF(const vec3 &normal, const vec3 &woW, vec3 *wiW, const vec2 &u, float *pdf) {
-
-    mat3 l2w = localToWorld(normal);
-    mat3 w2l = inverse(l2w);
-
-    BxDF *bxdf = new LambertianReflection(vec3(1.0));
-
-    vec3 wi, wo = w2l * woW;
-    *pdf = 0;
-    
-    vec3 f = bxdf->Sample_f(wo, &wi, u, pdf);
-    if (*pdf == 0) 
-        return vec3(0);
-    *wiW = l2w * wi;
-
-    *pdf += bxdf->Pdf(wo, wi);
-
-    // if not specular
-    //f = bxdf->f(wo, wi);
-    
-    return f;
-}

@@ -26,14 +26,25 @@ public:
         return 1 / Area();
     }
 
-    float Pdf(const vec3 pos, const vec3 intersectPos, const vec3 intersectN, const vec3 &wi) const {
-        // <<Intersect sample ray with area light geometry>> 
-        // Ray ray = ref.SpawnRay(wi);
-        // Float tHit;
-        // SurfaceInteraction isectLight;
-        // if (!Intersect(ray, &tHit, &isectLight, false)) return 0;
+    float Pdf(const vec3 &pos, const vec3 &wi, const RTCScene &scene, const unsigned int &diskID) const {
+        // Intersect sample ray with area light geometry, so the scene ONLY contains the disk
+        struct RTCIntersectContext context;
+        rtcInitIntersectContext(&context);
+        struct RTCRayHit rayhit;
+        rayhit.ray.org_x = pos.x; rayhit.ray.org_y = pos.y; rayhit.ray.org_z = pos.z;
+        rayhit.ray.dir_x = wi.x; rayhit.ray.dir_y = wi.y; rayhit.ray.dir_z = wi.z;
+        rayhit.ray.tnear = 0; rayhit.ray.tfar = INF;
+        rayhit.ray.mask = -1; rayhit.ray.flags = 0;
+        rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+        rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+        rtcIntersect1(scene, &context, &rayhit);
+        if (rayhit.hit.geomID != diskID) return 0; // no hit
+        
+        vec3 intersectN = vec3(rayhit.hit.Ng_x, rayhit.hit.Ng_y, rayhit.hit.Ng_z);
+        intersectN = normalize(intersectN);
+        vec3 intersectPos = pos + wi * rayhit.ray.tfar;
 
-        // <<Convert light sample weight to solid angle measure>> 
+        // Convert light sample weight to solid angle measure
         float pdf = (pos - intersectPos).lengthSquared() /
                     std::abs(dot(intersectN, -wi) * Area());
         

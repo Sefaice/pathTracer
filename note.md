@@ -54,14 +54,20 @@ world space, camera space都是右手系
 
 wo是相机方向，wi是光源方向
 
-bsdf: f就是brdf的值；Sample_f - 输入wo，采样wi并计算pdf和f；Pdf不采样，给定方向计算pdf值
+### bsdf
+
+f()就是计算brdf的值；Sample_f()输入wo，采样wi并计算pdf和f；Pdf()不采样，给定方向计算pdf值，给MIS用
+
+LambertianReflection中的pdf()由cos weighted采样计算pdf
+
+### 
 
 shape: 先实现了个disk，包括采样一个点和计算pdf
 
-light：Sample_Li - 输入场景中一个点的位置，采样wi计算pdf，是根据点的位置和光源信息采样的；Pdf_Li - 给定一个方向，计算光源这个方向的pdf
+light：Sample_Li - 输入场景中一个点的位置，采样wi计算pdf，是根据点的位置和光源信息采样的；Pdf_Li - 给定一个方向，计算光源这个方向的pdf; 目前用于检测与light碰撞的scene也写在app里（似乎应该写在light类里）
 
 todo: 
   * 实现ch14的direct lighting，即integrator类，但是
   * bsdf和light组件都有基本的了，把他们串到一起，intersect with light需要场景中加入light以求交
   * 事实上light contribution的计算就是f（brdf值*cos theta）乘 li（radiance）除pdf（importance sampling）
-  * sample bsdf eval light写到一半; 8.3的pdf怎么算
+  * sample light 和 sample nsdf写完了，待验证
