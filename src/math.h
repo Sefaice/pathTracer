@@ -30,7 +30,7 @@ struct vec3 {
 	vec3() : x(0), y(0), z(0) {}
 	vec3(float _a) : x(_a), y(_a), z(_a) {}
 	vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
-	void print() {
+	void print() const {
 		std::cout << std::fixed << std::setprecision(3);
 		std::cout << "vec3(" << x << ", " << y << ", " << z << ")" << std::endl;
 		std::cout << std::setprecision(0);

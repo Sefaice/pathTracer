@@ -70,4 +70,4 @@ todo:
   * 实现ch14的direct lighting，即integrator类，但是
   * bsdf和light组件都有基本的了，把他们串到一起，intersect with light需要场景中加入light以求交
   * 事实上light contribution的计算就是f（brdf值*cos theta）乘 li（radiance）除pdf（importance sampling）
-  * sample light 和 sample nsdf写完了，待验证
+  * sample bsdf看上去没问题；sample light现在不受光源位置影响，似乎不对

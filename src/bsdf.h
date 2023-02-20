@@ -21,25 +21,25 @@ inline mat3 localToWorld(const vec3 &N) {
 
 inline vec3 cartesian(const float phi, const float sinTheta, const float cosTheta)
 {
-  const float sinPhi = sinf(phi);
-  const float cosPhi = cosf(phi);
-  //sincosf(phi, &sinPhi, &cosPhi);
-  return vec3(cosPhi * sinTheta,
+    const float sinPhi = sinf(phi);
+    const float cosPhi = cosf(phi);
+    //sincosf(phi, &sinPhi, &cosPhi);
+    return vec3(cosPhi * sinTheta,
                     sinPhi * sinTheta,
                     cosTheta);
 }
 
 inline vec3 cartesian(const float phi, const float cosTheta)
 {
-  return cartesian(phi, sqrt(1 - cosTheta * cosTheta), cosTheta);
+    return cartesian(phi, sqrt(1 - cosTheta * cosTheta), cosTheta);
 }
 
 inline vec3 cosineSampleHemisphere(const vec2 s)
 {
-  const float phi = float(M_PI * 2) * s.x;
-  const float cosTheta = sqrt(s.y);
-  const float sinTheta = sqrt(1.0f - s.y);
-  return cartesian(phi, sinTheta, cosTheta);
+    const float phi = float(M_PI * 2) * s.x;
+    const float cosTheta = sqrt(s.y);
+    const float sinTheta = sqrt(1.0f - s.y);
+    return cartesian(phi, sinTheta, cosTheta);
 }
 
 class BxDF {
@@ -129,10 +129,10 @@ public:
     vec3 rho(int nSamples, const vec2 *samples1, const vec2 *samples2) const;
     vec3 rho(const vec3 &wo, int nSamples, const vec2 *samples) const;
 
+    // I believe wo is from surface to camera
     vec3 Sample_f(const vec3 &normal, const vec3 &woW, vec3 *wiW, const vec2 &u, float *pdf) const {
         mat3 l2w = localToWorld(normal);
         mat3 w2l = inverse(l2w);
-
         vec3 wi, wo = w2l * woW;
         *pdf = 0;
         

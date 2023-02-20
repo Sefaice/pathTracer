@@ -53,7 +53,7 @@ struct Camera {
         mat4 view = lookAt(pos, dst, up);
 
         raydir4 = inverse(view) * raydir4;
-        raydir = vec3(raydir4.x, raydir4.y, raydir4.z); // in workd space
+        raydir = vec3(raydir4.x, raydir4.y, raydir4.z); // in world space
         
         return Ray(pos, raydir, 0, INF);
     }
@@ -207,7 +207,7 @@ public:
     unsigned int groundID;
     unsigned int diskID, lightDiskID;
 
-    Application() {
+    Application(vec3 diskPos, vec3 diskNormal, float diskRadius) {
         // init device
         device = rtcNewDevice(NULL);
         if (!device)
@@ -218,13 +218,13 @@ public:
         scene = rtcNewScene(device);
         //initTriangle(device, scene);
         cubeID = initCube(device, scene);
-        diskID = initDisk(device, scene, vec3(-5,5,-5), 10, vec3(0,-1,0));
+        // diskID = initDisk(device, scene, diskPos, diskRadius, diskNormal);
         groundID = initGroundPlane(device, scene);
         rtcCommitScene(scene);
 
         // init light scene
         lightScene = rtcNewScene(device);
-        lightDiskID = initDisk(device, lightScene, vec3(-5,5,-5), 10, vec3(0,-1,0));
+        lightDiskID = initDisk(device, lightScene, diskPos, diskRadius, diskNormal);
         rtcCommitScene(lightScene);
 
         pixels = new unsigned char[width * height * channels];
@@ -283,63 +283,66 @@ public:
                 vec3 normal = vec3(rayhit.hit.Ng_x, rayhit.hit.Ng_y, rayhit.hit.Ng_z);
                 normal = normalize(normal);
 
-                /* sample BSDF */
-                vec3 wi;
-                float scatteringPdf;
-                vec3 f = bsdf->Sample_f(normal, ray.dir, &wi, sampler->sample2D(1)[0], &scatteringPdf);
-                f = f * std::abs(dot(wi, normal));
+                // /* sample BSDF */
+                // /******************************************************************************/
+                // vec3 wi;
+                // float scatteringPdf;
+                // vec3 f = bsdf->Sample_f(normal, -ray.dir, &wi, sampler->sample2D(1)[0], &scatteringPdf);
+                // f = f * std::abs(dot(wi, normal));
 
-                if (scatteringPdf > 0) {
-                    // Account for light contributions along sampled direction wi
-                    float bsdfLightPdf = light->Pdf_Li(ray.pos, wi, lightScene, lightDiskID);
-                    if (bsdfLightPdf > 0) {
-                        vec3 Li = light->L();
+                // if (scatteringPdf > 0) {
+                //     // Account for light contributions along sampled direction wi
+                //     float bsdfLightPdf = light->Pdf_Li(ray.pos, wi, lightScene, lightDiskID);
+                //     if (bsdfLightPdf > 0) {
+                //         vec3 Li = light->L();
 
-                        L = L + f * Li / scatteringPdf;
-                    }
-                }
-                // if (rayhit.hit.geomID == cubeID) {
-                //     L = normal;
-                // } else if (rayhit.hit.geomID == groundID) {
-                //     L = vec3(0.5, 0.1, 0.1);
-                // } else if (rayhit.hit.geomID == diskID) {
-                //     L = vec3(0.1, 0.5, 0.1);
+                //         L = L + f * Li / scatteringPdf;
+                //     }
                 // }
-                /****************/
-
-                // /* sample light */
-                // vec3 wiL;
-                // float lightPdf = 0, scatteringPdf = 0;
-                // vec3 Li = light->Sample_Li(ray.pos, sampler->sample2D(1)[0], &wiL, &lightPdf);
-
-                // if (lightPdf > 0) {
-                //     // Compute BSDF value for light sample
-                //     vec3 lightF = bsdf->f(normal, ray.dir, wiL) * std::abs(dot(wiL, normal));
-                //     scatteringPdf = bsdf->Pdf(normal, ray.dir, wiL);
-
-                //     // // shadow ray
-                //     // Ray shadowRay(ray.pos, wi, 0.001f, INF);
-                //     // rtcOccluded1(scene, &context, (RTCRay*)&shadowRay);
-                //     // if (shadowRay.max_t > 0.0f) { // no intersection with scene
-                //     //    // intersect with light
-                //     //    struct RTCRayHit rayhitlight;
-                //     //    rayhitlight.ray.org_x = ray.pos.x; rayhitlight.ray.org_y = ray.pos.y; rayhitlight.ray.org_z = ray.pos.z;
-                //     //    rayhitlight.ray.dir_x = wi.x; rayhitlight.ray.dir_y = wi.y; rayhitlight.ray.dir_z = wi.z;
-                //     //    rayhitlight.ray.tnear = ray.min_t; rayhitlight.ray.tfar = ray.max_t;
-                //     //    rayhitlight.ray.mask = -1; rayhitlight.ray.flags = 0;
-                //     //    rayhitlight.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-                //     //    rayhitlight.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-                //     //    rtcIntersect1(scene, &context, &rayhitlight);
-                //     // }
-
-                //     L = L + lightF * Li / lightPdf;
-                // }
+                // // if (rayhit.hit.geomID == cubeID) {
+                // //     L = normal;
+                // // } else if (rayhit.hit.geomID == groundID) {
+                // //     L = vec3(0.5, 0.1, 0.1);
+                // // } else if (rayhit.hit.geomID == diskID) {
+                // //     L = vec3(0.1, 0.5, 0.1);
+                // // }
                 // /******************************************************************************/
 
-                // update ray
-                ray.dir = normalize(wi);
-                ray.min_t = 0;
-                ray.max_t = INF;
+
+                /* sample light */
+                /******************************************************************************/
+                vec3 wiL;
+                float lightPdf = 0, scatteringPdf = 0;
+                vec3 Li = light->Sample_Li(ray.pos, sampler->sample2D(1)[0], &wiL, &lightPdf);
+
+                if (lightPdf > 0) {
+                    // Compute BSDF value for light sample
+                    vec3 lightF = bsdf->f(normal, -ray.dir, wiL) * std::abs(dot(wiL, normal));
+                    scatteringPdf = bsdf->Pdf(normal, -ray.dir, wiL);
+
+                    // // shadow ray
+                    // Ray shadowRay(ray.pos, wi, 0.001f, INF);
+                    // rtcOccluded1(scene, &context, (RTCRay*)&shadowRay);
+                    // if (shadowRay.max_t > 0.0f) { // no intersection with scene
+                    //    // intersect with light
+                    //    struct RTCRayHit rayhitlight;
+                    //    rayhitlight.ray.org_x = ray.pos.x; rayhitlight.ray.org_y = ray.pos.y; rayhitlight.ray.org_z = ray.pos.z;
+                    //    rayhitlight.ray.dir_x = wi.x; rayhitlight.ray.dir_y = wi.y; rayhitlight.ray.dir_z = wi.z;
+                    //    rayhitlight.ray.tnear = ray.min_t; rayhitlight.ray.tfar = ray.max_t;
+                    //    rayhitlight.ray.mask = -1; rayhitlight.ray.flags = 0;
+                    //    rayhitlight.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+                    //    rayhitlight.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+                    //    rtcIntersect1(scene, &context, &rayhitlight);
+                    // }
+
+                    L = L + lightF * Li / lightPdf;
+                }
+                /******************************************************************************/
+
+                // // update ray
+                // ray.dir = normalize(wi);
+                // ray.min_t = 0;
+                // ray.max_t = INF;
 
             } else { // no intersection with scene
                 break;
@@ -369,7 +372,7 @@ public:
 int main() {
     std::cout << "Version: " << pathTracer_VERSION_MAJOR << "." << pathTracer_VERSION_MINOR << std::endl;
 
-    unsigned int spp = 16;
+    unsigned int spp = 4;
 
     Camera camera;
     camera.pos = vec3(5, 20, 20);
@@ -380,11 +383,14 @@ int main() {
 
     //Light *light = new PointLight(vec3(-5, 5, -5), vec3(1));
     // disk area light is at (-5, 5, -5) face down
+    vec3 diskPos = vec3(-5, 5, -5);
+    vec3 diskNormal = vec3(0, -1, 0);
+    float diskRadius = 10;
     mat4 diskObjectToWorld(1.0);
     rotate(diskObjectToWorld, radians(180.0), vec3(1, 0, 0));
-    translate(diskObjectToWorld, vec3(-5, 5, -5));
+    translate(diskObjectToWorld, diskPos);
     mat4 diskWorldToObject = inverse(diskObjectToWorld);
-    Disk *disk = new Disk(10, &diskObjectToWorld, &diskWorldToObject);
+    Disk *disk = new Disk(1, &diskObjectToWorld, &diskWorldToObject);
     Light *light = new DiffuseAreaLight(disk, vec3(1));
 
     BxDF *bxdf = new LambertianReflection(vec3(1.0));
@@ -392,7 +398,7 @@ int main() {
 
     Sampler *sampler = new Sampler();
 
-    Application app;
+    Application app(diskPos, diskNormal, diskRadius);
     app.renderToFile(camera, sampler, light, bsdf, spp, "out.png");
 
     // /* wait for user input under Windows when opened in separate window */

@@ -27,7 +27,7 @@ public:
     }
 
     float Pdf(const vec3 &pos, const vec3 &wi, const RTCScene &scene, const unsigned int &diskID) const {
-        // Intersect sample ray with area light geometry, so the scene ONLY contains the disk
+        // Intersect sample ray with area light geometry, scene ONLY contains the disk
         struct RTCIntersectContext context;
         rtcInitIntersectContext(&context);
         struct RTCRayHit rayhit;
