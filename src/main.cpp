@@ -313,29 +313,29 @@ public:
                 /******************************************************************************/
                 vec3 wiL;
                 float lightPdf = 0, scatteringPdf = 0;
-                vec3 Li = light->Sample_Li(ray.pos, sampler->sample2D(1)[0], &wiL, &lightPdf);
+                float lightT;
+                vec3 Li = light->Sample_Li(ray.pos, sampler->sample2D(1)[0], &wiL, &lightPdf, &lightT);
 
-                if (lightPdf > 0) {
+                if (lightPdf > 0 && !isBlack(Li)) {
                     // Compute BSDF value for light sample
                     vec3 lightF = bsdf->f(normal, -ray.dir, wiL) * std::abs(dot(wiL, normal));
                     scatteringPdf = bsdf->Pdf(normal, -ray.dir, wiL);
 
-                    // // shadow ray
-                    // Ray shadowRay(ray.pos, wi, 0.001f, INF);
-                    // rtcOccluded1(scene, &context, (RTCRay*)&shadowRay);
-                    // if (shadowRay.max_t > 0.0f) { // no intersection with scene
-                    //    // intersect with light
-                    //    struct RTCRayHit rayhitlight;
-                    //    rayhitlight.ray.org_x = ray.pos.x; rayhitlight.ray.org_y = ray.pos.y; rayhitlight.ray.org_z = ray.pos.z;
-                    //    rayhitlight.ray.dir_x = wi.x; rayhitlight.ray.dir_y = wi.y; rayhitlight.ray.dir_z = wi.z;
-                    //    rayhitlight.ray.tnear = ray.min_t; rayhitlight.ray.tfar = ray.max_t;
-                    //    rayhitlight.ray.mask = -1; rayhitlight.ray.flags = 0;
-                    //    rayhitlight.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-                    //    rayhitlight.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-                    //    rtcIntersect1(scene, &context, &rayhitlight);
-                    // }
+                    // Compute effect of visibility for light source sample, shadow ray
+                    struct RTCRay shadowRay;
+                    shadowRay.org_x = ray.pos.x; shadowRay.org_y = ray.pos.y; shadowRay.org_z = ray.pos.z;
+                    shadowRay.dir_x = wiL.x; shadowRay.dir_y = wiL.y; shadowRay.dir_z = wiL.z;
+                    shadowRay.tnear = 0.001f; shadowRay.tfar = lightT;
+                    shadowRay.mask = -1; shadowRay.flags = 0;
+                    rtcOccluded1(scene, &context, &shadowRay);
+                    if (shadowRay.tfar < 0) { // occluded
+                        Li = vec3(0);
+                    }
 
-                    L = L + lightF * Li / lightPdf;
+                    // Add light’s contribution to reflected radiance
+                    if (!isBlack(Li)) {
+                        L = L + lightF * Li / lightPdf;
+                    }
                 }
                 /******************************************************************************/
 
@@ -385,12 +385,12 @@ int main() {
     // disk area light is at (-5, 5, -5) face down
     vec3 diskPos = vec3(-5, 5, -5);
     vec3 diskNormal = vec3(0, -1, 0);
-    float diskRadius = 10;
+    float diskRadius = 1;
     mat4 diskObjectToWorld(1.0);
-    rotate(diskObjectToWorld, radians(180.0), vec3(1, 0, 0));
-    translate(diskObjectToWorld, diskPos);
+    diskObjectToWorld = rotate(diskObjectToWorld, radians(90.0), vec3(1, 0, 0)); // change normal, NOTICE that disk originally faces +z, for uniformSampleDisk returns a (x,y) result
+    diskObjectToWorld = translate(diskObjectToWorld, diskPos);
     mat4 diskWorldToObject = inverse(diskObjectToWorld);
-    Disk *disk = new Disk(1, &diskObjectToWorld, &diskWorldToObject);
+    Disk *disk = new Disk(diskRadius, &diskObjectToWorld, &diskWorldToObject);
     Light *light = new DiffuseAreaLight(disk, vec3(1));
 
     BxDF *bxdf = new LambertianReflection(vec3(1.0));

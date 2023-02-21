@@ -3,7 +3,7 @@
 
 class Light {
 public:
-    virtual vec3 Sample_Li(const vec3 &pos, const vec2 &u, vec3 *wi, float *pdf) const = 0;
+    virtual vec3 Sample_Li(const vec3 &pos, const vec2 &u, vec3 *wi, float *pdf, float *t) const = 0;
     
     virtual float Pdf_Li(const vec3 &pos, const vec3 &wi, const RTCScene &scene, const unsigned int &diskID) const = 0;
 
@@ -17,7 +17,7 @@ class PointLight: public Light {
 public:
     PointLight(const vec3 &_pLight, const vec3 &_I): pLight(_pLight), I(_I) {}
 
-    vec3 Sample_Li(const vec3 &pos, const vec2 &u, vec3 *wi, float *pdf) const {
+    vec3 Sample_Li(const vec3 &pos, const vec2 &u, vec3 *wi, float *pdf, float *t) const {
         *wi = pLight - pos;
         *wi = normalize(*wi);
         *pdf = 1.f;
@@ -37,10 +37,11 @@ class DiffuseAreaLight: public Light {
 public:
     DiffuseAreaLight(Disk *_disk, const vec3 &_Lemit): disk(_disk), Lemit(_Lemit) {}
 
-    vec3 Sample_Li(const vec3 &pos, const vec2 &u, vec3 *wi, float *pdf) const {
+    vec3 Sample_Li(const vec3 &pos, const vec2 &u, vec3 *wi, float *pdf, float *t) const {
         vec3 sampledPos = disk->Sample(u); // world space
-        *wi = sampledPos - pos;
-        *wi = normalize(*wi);
+        vec3 dist = sampledPos - pos;
+        *wi = normalize(dist);
+        *t = dist.y / (*wi).y; // todo: check devided by zero
         *pdf = disk->Pdf();
 
         return Lemit;

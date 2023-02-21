@@ -44,6 +44,8 @@ pc:
 
 rtcSetSharedGeometryBuffer有什么用？
 
+embree迭代会更新函数，看对应的doc
+
 ## note
 
 pathTracing.md主要记pbrt书中的理论，这里主要记实现，可能有的类没实现导致代码不同
@@ -67,7 +69,5 @@ shape: 先实现了个disk，包括采样一个点和计算pdf
 light：Sample_Li - 输入场景中一个点的位置，采样wi计算pdf，是根据点的位置和光源信息采样的；Pdf_Li - 给定一个方向，计算光源这个方向的pdf; 目前用于检测与light碰撞的scene也写在app里（似乎应该写在light类里）
 
 todo: 
-  * 实现ch14的direct lighting，即integrator类，但是
-  * bsdf和light组件都有基本的了，把他们串到一起，intersect with light需要场景中加入light以求交
-  * 事实上light contribution的计算就是f（brdf值*cos theta）乘 li（radiance）除pdf（importance sampling）
-  * sample bsdf看上去没问题；sample light现在不受光源位置影响，似乎不对
+  * 实现ch14的direct lighting，即integrator类，实现MIS
+  * sample bsdf看上去没问题；sample light现在不受光源位置影响，似乎不对; disk->sample的左边转换不对

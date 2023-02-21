@@ -92,3 +92,9 @@ dw/dA的计算在5.5.3，这个公式通常用于在渲染方程中把立体角�
 ### 14.3 Direct Lighting
 
 只计算直接光照，即光路只有相机-表面-光源，只在表面计算一次bsdf采样和一次光源采样，再用MIS计算结果
+
+bsdf采样先对bsdf进行采样，随后计算这个光线的light pdf
+
+光源采样先采样光线，直接在光源上采样一个点和shading point连线，因此接着需要计算是否被遮挡
+
+事实上，不论bsdf采样还是光源采样，light contribution的计算就是brdf的公式，f（brdf值*cos theta）乘 Li（radiance）除pdf（importance sampling）

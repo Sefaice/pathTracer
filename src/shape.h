@@ -15,6 +15,7 @@ public:
         vec2 pd = uniformSampleDisk(u);
         vec4 pObj(pd.x * radius, pd.y * radius, 0, 1);
         vec4 pWorld = (*ObjectToWorld) * pObj;
+
         return vec3(pWorld.x, pWorld.y, pWorld.z);
     }
 

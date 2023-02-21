@@ -17,7 +17,7 @@ struct vec2 {
 
 	vec2() : x(0), y(0) {}
 	vec2(float _x, float _y) : x(_x), y(_y) {}
-	void print() {
+	void print() const {
 		std::cout << std::fixed << std::setprecision(3);
 		std::cout << "vec2(" << x << ", " << y << ")" << std::endl;
 		std::cout << std::setprecision(0);
@@ -49,7 +49,7 @@ struct vec4 {
 	vec4() : x(0), y(0), z(0), w(0) {}
 	vec4(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
 	vec4(vec3 _v, float _w) : x(_v.x), y(_v.y), z(_v.z), w(_w) {}
-	void print() {
+	void print() const {
 		std::cout << std::fixed << std::setprecision(3);
 		std::cout << "vec4(" << x << ", " << y << ", " << z << ", " << w << ")" << std::endl;
 		std::cout << std::setprecision(0);
@@ -84,7 +84,7 @@ struct mat3 {
 		m[1][0] = _c2.x; m[1][1] = _c2.y; m[1][2] = _c2.z;
 		m[2][0] = _c3.x; m[2][1] = _c3.y; m[2][2] = _c3.z;
 	}
-	void print() {
+	void print() const {
 		std::cout << std::fixed << std::setprecision(3);
 		std::cout << "mat3x3(";
 		for (int i = 0; i < 3; i++) {
@@ -121,7 +121,7 @@ struct mat4 {  // COLUMN-MAJOR. m[0] is actually the first column of matrix
 		m[2][0] = _x9; m[2][1] = _x10; m[2][2] = _x11; m[2][3] = _x12;
 		m[3][0] = _x13; m[3][1] = _x14; m[3][2] = _x15; m[3][3] = _x16;
 	}
-	void print() {
+	void print() const {
 		std::cout << std::fixed << std::setprecision(3);
 		std::cout << "mat4x4(";
 		for (int i = 0; i < 4; i++) {
@@ -133,7 +133,7 @@ struct mat4 {  // COLUMN-MAJOR. m[0] is actually the first column of matrix
 	}
 };
 
-struct Ray {
+struct Ray { // same align with RTCRay
     vec3 pos;
     float min_t;
     vec3 dir;
@@ -554,4 +554,8 @@ inline mat4 ortho(float l, float r, float b, float t, float n, float f) {
 		        0,                  2 / (t - b),        0,                  0,
 		        0,                  0,                  -2 / (f - n),       0,
 		        -(r + l) / (r - l), -(t + b) / (t - b), -(f + n) / (f - n), 1);
+}
+
+inline bool isBlack(const vec3 &v1) {
+	return v1.x == 0. && v1.y == 0. && v1.z == 0.;
 }
