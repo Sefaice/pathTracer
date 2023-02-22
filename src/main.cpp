@@ -283,58 +283,64 @@ public:
                 vec3 normal = vec3(rayhit.hit.Ng_x, rayhit.hit.Ng_y, rayhit.hit.Ng_z);
                 normal = normalize(normal);
 
-                // /* sample BSDF */
-                // /******************************************************************************/
-                // vec3 wi;
-                // float scatteringPdf;
-                // vec3 f = bsdf->Sample_f(normal, -ray.dir, &wi, sampler->sample2D(1)[0], &scatteringPdf);
-                // f = f * std::abs(dot(wi, normal));
-
-                // if (scatteringPdf > 0) {
-                //     // Account for light contributions along sampled direction wi
-                //     float bsdfLightPdf = light->Pdf_Li(ray.pos, wi, lightScene, lightDiskID);
-                //     if (bsdfLightPdf > 0) {
-                //         vec3 Li = light->L();
-
-                //         L = L + f * Li / scatteringPdf;
-                //     }
+                // if (rayhit.hit.geomID == cubeID) {
+                //     L = normal;
+                // } else if (rayhit.hit.geomID == groundID) {
+                //     L = vec3(0.5, 0.1, 0.1);
+                // } else if (rayhit.hit.geomID == diskID) {
+                //     L = vec3(0.1, 0.5, 0.1);
                 // }
-                // // if (rayhit.hit.geomID == cubeID) {
-                // //     L = normal;
-                // // } else if (rayhit.hit.geomID == groundID) {
-                // //     L = vec3(0.5, 0.1, 0.1);
-                // // } else if (rayhit.hit.geomID == diskID) {
-                // //     L = vec3(0.1, 0.5, 0.1);
-                // // }
-                // /******************************************************************************/
+                // break;
 
+                /* sample BSDF */
+                /******************************************************************************/
+                vec3 wi_BSDF;
+                float scatteringPdf_BSDF, lightPdf_BSDF;
+                vec3 f_BSDF = bsdf->Sample_f(normal, -ray.dir, &wi_BSDF, sampler->sample2D(1)[0], &scatteringPdf_BSDF);
+                f_BSDF = f_BSDF * std::abs(dot(wi_BSDF, normal));
+
+                if (scatteringPdf_BSDF > 0 && !isBlack(f_BSDF)) {
+                    // Account for light contributions along sampled direction wi_BSDF
+                    lightPdf_BSDF = light->Pdf_Li(ray.pos, wi_BSDF, lightScene, lightDiskID);
+                    float weight_BSDF = 1;
+                    weight_BSDF = PowerHeuristic(1, scatteringPdf_BSDF, 1, lightPdf_BSDF);
+
+                    // Add light contribution from material sampling
+                    vec3 Li_BSDF = light->L();
+                    if (!isBlack(Li_BSDF) && lightPdf_BSDF > 0) {
+                        L = L + f_BSDF * Li_BSDF * weight_BSDF / scatteringPdf_BSDF;
+                    }
+                }
+                /******************************************************************************/
 
                 /* sample light */
                 /******************************************************************************/
-                vec3 wiL;
-                float lightPdf = 0, scatteringPdf = 0;
+                vec3 wi_light;
+                float lightPdf_light = 0, scatteringPdf_light = 0;
                 float lightT;
-                vec3 Li = light->Sample_Li(ray.pos, sampler->sample2D(1)[0], &wiL, &lightPdf, &lightT);
+                vec3 Li_light = light->Sample_Li(ray.pos, sampler->sample2D(1)[0], &wi_light, &lightPdf_light, &lightT);
 
-                if (lightPdf > 0 && !isBlack(Li)) {
+                if (lightPdf_light > 0 && !isBlack(Li_light)) {
                     // Compute BSDF value for light sample
-                    vec3 lightF = bsdf->f(normal, -ray.dir, wiL) * std::abs(dot(wiL, normal));
-                    scatteringPdf = bsdf->Pdf(normal, -ray.dir, wiL);
+                    vec3 f_light = bsdf->f(normal, -ray.dir, wi_light) * std::abs(dot(wi_light, normal));
+                    scatteringPdf_light = bsdf->Pdf(normal, -ray.dir, wi_light);
 
                     // Compute effect of visibility for light source sample, shadow ray
                     struct RTCRay shadowRay;
                     shadowRay.org_x = ray.pos.x; shadowRay.org_y = ray.pos.y; shadowRay.org_z = ray.pos.z;
-                    shadowRay.dir_x = wiL.x; shadowRay.dir_y = wiL.y; shadowRay.dir_z = wiL.z;
+                    shadowRay.dir_x = wi_light.x; shadowRay.dir_y = wi_light.y; shadowRay.dir_z = wi_light.z;
                     shadowRay.tnear = 0.001f; shadowRay.tfar = lightT;
                     shadowRay.mask = -1; shadowRay.flags = 0;
                     rtcOccluded1(scene, &context, &shadowRay);
                     if (shadowRay.tfar < 0) { // occluded
-                        Li = vec3(0);
+                        Li_light = vec3(0);
                     }
 
                     // Add light’s contribution to reflected radiance
-                    if (!isBlack(Li)) {
-                        L = L + lightF * Li / lightPdf;
+                    if (!isBlack(Li_light)) {
+                        float weight_light = 1;
+                        weight_light = PowerHeuristic(1, lightPdf_light, 1, scatteringPdf_light);
+                        L = L + f_light * Li_light * weight_light / lightPdf_light;
                     }
                 }
                 /******************************************************************************/
@@ -372,7 +378,7 @@ public:
 int main() {
     std::cout << "Version: " << pathTracer_VERSION_MAJOR << "." << pathTracer_VERSION_MINOR << std::endl;
 
-    unsigned int spp = 4;
+    unsigned int spp = 16;
 
     Camera camera;
     camera.pos = vec3(5, 20, 20);
@@ -385,7 +391,7 @@ int main() {
     // disk area light is at (-5, 5, -5) face down
     vec3 diskPos = vec3(-5, 5, -5);
     vec3 diskNormal = vec3(0, -1, 0);
-    float diskRadius = 1;
+    float diskRadius = 2;
     mat4 diskObjectToWorld(1.0);
     diskObjectToWorld = rotate(diskObjectToWorld, radians(90.0), vec3(1, 0, 0)); // change normal, NOTICE that disk originally faces +z, for uniformSampleDisk returns a (x,y) result
     diskObjectToWorld = translate(diskObjectToWorld, diskPos);

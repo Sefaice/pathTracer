@@ -559,3 +559,12 @@ inline mat4 ortho(float l, float r, float b, float t, float n, float f) {
 inline bool isBlack(const vec3 &v1) {
 	return v1.x == 0. && v1.y == 0. && v1.z == 0.;
 }
+
+inline float BalanceHeuristic(int nf, float fPdf, int ng, float gPdf) {
+    return (nf * fPdf) / (nf * fPdf + ng * gPdf);
+}
+
+inline float PowerHeuristic(int nf, float fPdf, int ng, float gPdf) {
+    float f = nf * fPdf, g = ng * gPdf;
+    return (f * f) / (f * f + g * g);
+}

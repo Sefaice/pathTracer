@@ -67,6 +67,8 @@ Cosine-Weighted Hemisphere Sampling: mc方法采样如果能按与被计算分�
 
 需要构造一个pdf，**不知为什么**构造成px = c * fx，通过pdf的积分为1解出c，然后就能用inversion method采样了
 
+multiple importance sampling: 反射方程中积分内有两个函数，brdf和light，选择其中一个采样可能会带来很大的方差，MIS可以帮助减小方差。这里讲了balance heuristic和power heuristic两种。
+
 ### 13.7 russian roulette
 
 用于加快Monte Carlo采样的效率。以p的概率选择是否进行某一采样，然后在结果中乘1/p，就保证了总期望不变，而加快了采样的整体速度
