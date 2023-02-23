@@ -83,6 +83,10 @@ public:
         state = 666;
     }
 
+    Sampler(uint32_t seed) {
+        state = seed;
+    }
+
     std::vector<float> sample1D(int nSamples) {
         std::vector<float> samples1D(nSamples);
         StratifiedSample1D(&samples1D[0], nSamples, state, true);

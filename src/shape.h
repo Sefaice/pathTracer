@@ -13,7 +13,7 @@ public:
 
     vec3 Sample(const vec2 &u) const {
         vec2 pd = uniformSampleDisk(u);
-        vec4 pObj(pd.x * radius, pd.y * radius, 0, 1);
+        vec4 pObj(pd.x, pd.y, 0, 1);
         vec4 pWorld = (*ObjectToWorld) * pObj;
 
         return vec3(pWorld.x, pWorld.y, pWorld.z);

@@ -68,6 +68,8 @@ shape: 先实现了个disk，包括采样一个点和计算pdf
 
 light：Sample_Li - 输入场景中一个点的位置，采样wi计算pdf，是根据点的位置和光源信息采样的；Pdf_Li - 给定一个方向，计算光源这个方向的pdf; 目前用于检测与light碰撞的scene也写在app里（似乎应该写在light类里）
 
+bug log:
+  * disk半径大了之后有条纹 - 开始猜是随机数的问题/坐标转换问题 - debug最后发现是最终写入像素值的时候没有clamp
+
 todo: 
   * 已实现ch14的direct lighting，即integrator类，能否实现与书中对比图fig14.13相同的结果？
-  * disk半径大了之后有条纹，猜是随机数的问题
